@@ -65,11 +65,12 @@ public class AttendanceServiceImpl implements AttendanceService {
     public void markLeaveDays(Long empId, LocalDate startDate, LocalDate endDate) {
         LocalDate current=startDate;
         while(!current.isAfter(endDate)){
+            LocalDate finalCurrent = current;
             Attendance attendance=repository.findByEmployeeIdAndDate(empId,current)
                     .orElseGet(()->{
                         Attendance a =new  Attendance();
                         a.setEmployeeId(empId);
-                        a.setDate(current);
+                        a.setDate(finalCurrent);
                         return a;
                     });
             attendance.setStatus(AttendanceStatus.ON_LEAVE);
@@ -77,7 +78,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             attendance.setCheckOutTime(null);
             repository.save(attendance);
 
-            current.plusDays(1);
+            current=current.plusDays(1);
         }
     }
 }
