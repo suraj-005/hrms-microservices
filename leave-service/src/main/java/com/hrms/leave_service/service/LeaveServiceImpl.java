@@ -1,5 +1,6 @@
 package com.hrms.leave_service.service;
 
+import com.hrms.leave_service.dto.LeaveApprovedEvent;
 import com.hrms.leave_service.entity.Leave;
 import com.hrms.leave_service.repository.LeaveRepository;
 import com.hrms.leave_service.utils.LeaveStatus;
@@ -12,9 +13,11 @@ import java.util.List;
 public class LeaveServiceImpl implements LeaveService {
 
     private final LeaveRepository repository;
+    private final LeaveEventProducer leaveEventProducer;
 
-    public LeaveServiceImpl(LeaveRepository repository) {
+    public LeaveServiceImpl(LeaveRepository repository, LeaveEventProducer leaveEventProducer) {
         this.repository = repository;
+        this.leaveEventProducer = leaveEventProducer;
     }
 
     @Override
@@ -34,7 +37,18 @@ public class LeaveServiceImpl implements LeaveService {
                 .orElseThrow(() -> new RuntimeException("Leave not found"));
 
         leave.setStatus(LeaveStatus.APPROVED);
-        return repository.save(leave);
+        repository.save(leave);
+
+        LeaveApprovedEvent leaveApprovedEvent=new LeaveApprovedEvent();
+        leaveApprovedEvent.setLeaveId(leave.getId());
+        leaveApprovedEvent.setLeaveType(leave.getType().name());
+        leaveApprovedEvent.setEmployeeId(leave.getEmployeeId());
+        leaveApprovedEvent.setStartDate(leave.getStartDate());
+        leaveApprovedEvent.setEndDate(leave.getEndDate());
+
+        leaveEventProducer.sendLeaveApprovedEvent(leaveApprovedEvent);
+
+        return leave;
     }
 
     @Override

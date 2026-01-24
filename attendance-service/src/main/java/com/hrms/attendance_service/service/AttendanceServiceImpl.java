@@ -1,6 +1,5 @@
 package com.hrms.attendance_service.service;
 
-import com.hrms.attendance_service.dto.EmployeeDto;
 import com.hrms.attendance_service.entity.Attendance;
 import com.hrms.attendance_service.entity.AttendanceStatus;
 import com.hrms.attendance_service.externalApi.EmployeeClient;
@@ -24,7 +23,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Attendance checkIn(Long employeeId) {
-        EmployeeDto employeeDto=employeeClient.getEmployeeById(employeeId);
+//        EmployeeDto employeeDto=employeeClient.getEmployeeById(employeeId);
         LocalDate today = LocalDate.now();
 
         if (repository.findByEmployeeIdAndDate(employeeId, today).isPresent()) {
@@ -60,5 +59,25 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public List<Attendance> history(Long employeeId) {
         return repository.findByEmployeeId(employeeId);
+    }
+
+    @Override
+    public void markLeaveDays(Long empId, LocalDate startDate, LocalDate endDate) {
+        LocalDate current=startDate;
+        while(!current.isAfter(endDate)){
+            Attendance attendance=repository.findByEmployeeIdAndDate(empId,current)
+                    .orElseGet(()->{
+                        Attendance a =new  Attendance();
+                        a.setEmployeeId(empId);
+                        a.setDate(current);
+                        return a;
+                    });
+            attendance.setStatus(AttendanceStatus.ON_LEAVE);
+            attendance.setCheckInTime(null);
+            attendance.setCheckOutTime(null);
+            repository.save(attendance);
+
+            current.plusDays(1);
+        }
     }
 }
