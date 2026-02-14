@@ -2,6 +2,7 @@ package com.hrms.attendance_service.service;
 
 import com.hrms.attendance_service.entity.Attendance;
 import com.hrms.attendance_service.entity.AttendanceStatus;
+import com.hrms.attendance_service.exceptions.ResourceNotFoundException;
 import com.hrms.attendance_service.externalApi.EmployeeClient;
 import com.hrms.attendance_service.repository.AttendanceRepository;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,6 @@ public class AttendanceServiceImpl implements AttendanceService {
     public Attendance checkIn(Long employeeId) {
 //        EmployeeDto employeeDto=employeeClient.getEmployeeById(employeeId);
         LocalDate today = LocalDate.now();
-
         if (repository.findByEmployeeIdAndDate(employeeId, today).isPresent()) {
             throw new RuntimeException("Already checked in today");
         }
@@ -43,7 +43,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     public Attendance checkOut(Long employeeId) {
         Attendance attendance = repository
                 .findByEmployeeIdAndDate(employeeId, LocalDate.now())
-                .orElseThrow(() -> new RuntimeException("Check-in not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Check-in not found"));
 
         attendance.setCheckOutTime(LocalDateTime.now());
         return repository.save(attendance);
